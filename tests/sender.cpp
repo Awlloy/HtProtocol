@@ -129,10 +129,10 @@ int main(){
     });
 
     thread.detach();
-    uint8_t write_buffer[1024*100]="12345 99dksfndskjfkhl23489dsmfdskhfdhsfhskklsdfhdahflkdsahfdkjsah fxcvnmvsdf i23uyr827o3irisdbfsdfdsfsdfsdfsdf0453 12312321232131237349543759834758937598347985743985392347jksdfhdhjsdhfdshfsdhfsadasdkashdjashdsadhjasdskahdsadhad475893475379485734895379534754398347598437439875934871123 hello world";
+    uint8_t write_buffer[1024*1000]="12345 99dksfndskjfkhl23489dsmfdskhfdhsfhskklsdfhdahflkdsahfdkjsah fxcvnmvsdf i23uyr827o3irisdbfsdfdsfsdfsdfsdf0453 12312321232131237349543759834758937598347985743985392347jksdfhdhjsdhfdshfsdhfsadasdkashdjashdsadhjasdskahdsadhad475893475379485734895379534754398347598437439875934871123 hello world";
     printf("size %d\n",strlen((char *)write_buffer));
     // int send_size = sendMessage(write_buffer,strlen((char *)write_buffer),&ht_write,1000*1000*10);//10s
-    int send_size = sendMessage(write_buffer,1024*100,&ht_write,1000*1000*10);//10s
+    int send_size = sendMessage(write_buffer,1024*1000,&ht_write,1000*1000*10);//10s
     printf("send \n%s\n",write_buffer);
     printf("send_message %d\n",send_size);
     close_thread=true;

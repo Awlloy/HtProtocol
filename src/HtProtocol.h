@@ -12,7 +12,6 @@
 #define WINDOW_SIZE 10
 //最大支持通信连接数量,请根据需求修改，会影响到内存占用
 #define MAX_CONNECT 32
-#define MAX_PACK_IDX 255
 
 //帧头尾标志，最高位必须位1
 #define HEADFLAG 0xab

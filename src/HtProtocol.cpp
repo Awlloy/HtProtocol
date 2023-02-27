@@ -21,6 +21,12 @@ void get_timestamp(HTimestamp *timestamp){
 int64_th get_passtime(HTimestamp *timestamp){
     return time_cout_us-timestamp->time_tamp;
 }
+void init_window_check(uint8_th *check_window,int size){
+    int i=0;
+    for(i=0;i<size;++i){
+        check_window[i]=false;
+    }
+}
 
 void init_window_fifo(WindowFifo *fifo){
     fifo->head=0;
@@ -31,9 +37,11 @@ int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us){
     context->pack_idx=0;
     context->activate=true;
     context->retry_timeout_us=retry_timeout_us;
-    context->cp_pack_number=0;
+    context->cp_pack_number=-1;
     init_window_fifo(&context->write_fifo);
+    init_window_check(context->write_check,WINDOW_SIZE);
     init_window_fifo(&context->read_fifo);
+    init_window_check(context->read_check,WINDOW_SIZE);
     for(i=0;i<MAX_CONNECT;++i){
         if(context_array[i]==NULL || !(context_array[i]->activate)){
             context_array[i]=context;
@@ -82,7 +90,7 @@ int byte_stuffing(void *buf,int size,HtBuffer *buffer,int flag,int is_first){
         }
         buf_ptr[buf_size++]=write_buf[write_buf_idx++];
     }
-    printf("byte_stuffing while done\n");
+    // printf("byte_stuffing while done\n");
     // if(is_first>0 && write_buf_idx==size){//数据全部打包完毕
     if(write_buf_idx==size){//数据全部打包完毕
         if(is_first>0){

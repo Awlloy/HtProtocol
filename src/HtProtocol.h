@@ -107,7 +107,7 @@ int send_window(HtProtocolContext *context);
 void check_write();
 
 int write_pack_to_window(HtProtocolContext *context,void *buf,int size,int flag,int number,int is_first);
-int read_pack_to_window(HtProtocolContext *context,HtBuffer *recover_buf,int buf_offest,int size_offest);
+int read_pack_to_window(HtProtocolContext *context,int window_id,HtBuffer *recover_buf,int buf_offest,int size_offest,int update);
 
 int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out);
 

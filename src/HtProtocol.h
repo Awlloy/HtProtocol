@@ -41,7 +41,8 @@ struct HTimestamp{
 struct HtBuffer{
     uint8_th buf[PACK_SIZE];
     uint16_th size;
-    int number;
+    // int number;
+    uint8_th number;
 
 };
 

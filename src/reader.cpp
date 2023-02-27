@@ -102,7 +102,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             decode_data_size=recover_buf.size-3;
         }
         if(is_head){
-            if((flag &(ACK|RF) == (ACK|RF))){
+            if((flag &(ACK|RF)) == (ACK|RF)){
                 if(closing)break;
             }else if((flag & RF) == (RF)){
                 closing=1;

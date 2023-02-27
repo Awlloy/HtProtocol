@@ -62,9 +62,8 @@ void check_write(){
         }
     }
 }
-int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,int size,int flag,int number_,int is_first){//将用户数据放入发送窗口
+int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,int size,int flag,int number,int is_first){//将用户数据放入发送窗口
     // static int number=number_;
-    static uint64_th number=number_;
     HtBuffer *window_buf;
     int new_rear;
     int window_id;
@@ -74,7 +73,7 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
     if(window_id==-1)return -1;//窗口已满，无法装入
     context->write_check[window_id]=false;
     window_buf=&(context->write_fifo.fifo[window_id]);
-    window_buf->number=number++;
+    window_buf->number=number;
     window_buf->size=PACK_SIZE;
 
     pack_size=byte_stuffing(buf,size,window_buf,flag,is_first);
@@ -85,7 +84,7 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
     // printf("\n\n");
     printf("number %lu\n",number);
     *_window_id=window_id;
-    number=number%(NUMBER_MAX_SIZE);//溢出防止
+    // number=number%(NUMBER_MAX_SIZE);//溢出防止
     //字节填充
     return pack_size;//数据完全装入窗口
 }
@@ -164,13 +163,16 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     HtBuffer read_buf;
     HtBuffer recover_buf;
     HTimestamp timestamp;
+    HTimestamp send_time_out;
     uint8_th *buf_send;
     int size_send;
     int first;
     int flag;
     int window_id;
     uint8_th val_data;
+    int last_number=0;
     int send_done=0;
+    int closing=0;
     // init_window_fifo(&context->write_fifo);
     get_timestamp(&timestamp);
     buf_send=(uint8_th *)buf;
@@ -181,11 +183,12 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     while(get_passtime(&timestamp)<time_out){
         // printf("size_send %d\n",size_send);
         if(size_send>0){
-            ret=write_pack_to_window(context,&window_id,buf_send,size_send,flag,1,first);
+            ret=write_pack_to_window(context,&window_id,buf_send,size_send,flag,last_number,first);
             // printf("write_pack_to_window %d %d ret\n",number,ret);
             first=0;
             //发送当前帧数据
             if(ret>=0){
+                last_number=(last_number+1)%NUMBER_MAX_SIZE;
                 //装入部分数据到窗口，跳过已经装入数据
                 buf_send+=ret;
                 size_send-=ret;
@@ -199,13 +202,27 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         //打包数据到发送窗口
         ret=send_window(context);//检查超时并发送窗口数据
         if(ret==-1)break;//发送出错
-        if(ret==1 && size_send==0 && !send_done){
+        // if(ret==1 && size_send==0 && !send_done){
+        if(ret==1 && size_send==0 && !closing){
             //数据发送完成并全部收到反馈，进入接收者结束信号，并超时等待
-            printf("send done\n");
-            send_done=1;
-            time_out=context->retry_timeout_us*2;//修改超时等待反馈
+            if(!send_done){
+                // last_number = context->write_fifo.fifo[(context->write_fifo.head+context->write_fifo.size - 1)%WINDOW_SIZE].number;
+                // last_number=last_number%NUMBER_MAX_SIZE;
+                send_done=1;
+                get_timestamp(&send_time_out);
+                write_respond(context,last_number,RF);//挥手
+                printf("send RF\n");
+            }
+            if(get_passtime(&send_time_out)>context->retry_timeout_us){//超时再次发送,直到收到反馈
+                // printf("msg send done\n");
+                write_respond(context,last_number,RF);//挥手
+                printf("send RF\n");
+                get_timestamp(&send_time_out);
+            }
+            
+            // time_out=context->retry_timeout_us*2;//修改超时等待反馈
             // rf_number=recover_buf.number;
-            get_timestamp(&timestamp);
+            // get_timestamp(&timestamp);
             // break;//发送完成
         }
         // if(ret==0 || ret==size_send)continue;//数据已经发送一轮完毕，目前还剩余窗口数据未确认完毕
@@ -226,11 +243,27 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             // printf("writer get head  flag %x\n",flag);
             recover_buf.number=recover_buf.buf[2];
             // printf("flag %x %d\n",flag&ACK,(flag&ACK)==ACK);
-            if((flag &(ACK|RF) == (ACK|RF)) && send_done){
-                // return cp_pack_idx;
-                write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
-                printf("send RF done\n");
-                return size;
+            if((flag &(ACK|RF)) == (ACK|RF)){//收到反馈
+                printf("got ACK|RF close last_number %d  recover_buf.number %d\n",last_number,recover_buf.number);
+                if(send_done && last_number==recover_buf.number){
+                    if(!closing){
+                        time_out=context->retry_timeout_us*2;//修改超时等待反馈
+                        get_timestamp(&timestamp);
+                    }
+                    //收到挥手反馈
+                    printf("got ACK|RF wait time out\n");
+                    closing=1;
+                }
+                continue;
+                
+            }else if((flag&RF)==RF && closing){
+                printf("got RF close last_number %d  recover_buf.number %d\n",last_number,recover_buf.number);
+                if(last_number==recover_buf.number){
+                    write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
+                    // return size;
+                    break;
+                }
+                continue;
             }
             else if((flag&ACK)==ACK){
                 printf("ack recover_buf.number %d\n",recover_buf.number);
@@ -244,7 +277,7 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             }
         }
     }
-    if(send_done){
+    if(send_done && closing){
         return size;
     }
     return -1;

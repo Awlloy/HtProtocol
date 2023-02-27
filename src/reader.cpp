@@ -71,6 +71,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     int window_id_offest=-1;
     int window_id=-1;
     int rf_number=-1;
+    int closing=0;
     head_buf.number=-1;
     head_buf.size=WINDOW_SIZE;
     init_window_fifo(&context->read_fifo);//初始化接收fifo
@@ -101,8 +102,15 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             decode_data_size=recover_buf.size-3;
         }
         if(is_head){
-            if((flag &(ACK|RF) == (ACK|RF)) && rf_number==recover_buf.number){
-                return rec_size;
+            if((flag &(ACK|RF) == (ACK|RF))){
+                if(closing)break;
+            }else if((flag & RF) == (RF)){
+                closing=1;
+                write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
+                time_out=context->retry_timeout_us * 2;//修改超时等待反馈
+                get_timestamp(&timestamp);
+                write_respond(context,recover_buf.number,RF);//发送关闭信号
+                continue;
             }
             else if((flag&ACK)==ACK){
                 update_ack(context,recover_buf.number);
@@ -165,15 +173,15 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             is_rear=1;
             rf_number=recover_buf.number;//记录最后帧的序号，以便后面发送确认
         }
-        if(is_rear && check_read_window(context)){//所有包已经接收完成
-            printf("all read done send out\n");
-            write_respond(context,rf_number,ACK|RF);//装入缓冲区成功，反馈发送者
-            time_out=context->retry_timeout_us * 2;//修改超时等待反馈
-            get_timestamp(&timestamp);
+        // if(is_rear && check_read_window(context)){//所有包已经接收完成
+        //     printf("all read done send out\n");
+        //     write_respond(context,rf_number,ACK|RF);//装入缓冲区成功，反馈发送者
+        //     time_out=context->retry_timeout_us * 2;//修改超时等待反馈
+        //     get_timestamp(&timestamp);
 
-            //拷贝数据
+        //     //拷贝数据
 
-        }
+        // }
     }
     if(is_rear && check_read_window(context)){//所有包已经接收完成
         printf("all read done but receive rf time out %d\n",context->read_fifo.size);

@@ -1,7 +1,12 @@
 
 #include "HtProtocol.h"
+#include "config.h"
 extern int context_num;
 extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
+
+int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out);
+int check_read_window(HtProtocolContext *context);
+
 
 int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out){
     int ret=context->read(buf->buf,buf->size,time_out);

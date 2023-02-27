@@ -1,7 +1,14 @@
 
 #include "HtProtocol.h"
+#include "config.h"
 extern int context_num;
 extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
+
+
+void check_write();
+int send_window(HtProtocolContext *context);
+int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out);
+
 int send_pack(HtProtocolContext *context,HtBuffer *send_buf,HTimestamp *write_timestamp){
     static HTimestamp timestamp;
     static int ret;
@@ -76,7 +83,7 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
     //     printf("%x ",((uint8_th *)buf)[i]);
     // }
     // printf("\n\n");
-    printf("number %d\n",number);
+    printf("number %lu\n",number);
     *_window_id=window_id;
     number=number%(NUMBER_MAX_SIZE);//溢出防止
     //字节填充

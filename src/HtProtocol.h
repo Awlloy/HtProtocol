@@ -127,5 +127,13 @@ int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us);
 int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 int readMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 
+int check_read_window(HtProtocolContext *context);
+
+int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf);
+int enqueue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf);
+int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,void *user_buf,int size,int number);
+
+int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size);
+int enqueue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size,int number);
 #endif
 

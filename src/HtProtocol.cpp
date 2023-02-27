@@ -118,6 +118,64 @@ void byte_stuffing_recover(HtBuffer *buffer,HtBuffer *buffer_res){
     }
     buffer_res->size=res_idx;
 }
+int check_read_window(HtProtocolContext *context){
+    int ic=context->read_fifo.head;
+    int rear=context->read_fifo.rear;
+    //修改为已确认
+    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
+        if(!context->read_check[ic]){
+            return 0;
+        }
+    }
+    return 1;
+}
 
+// int replace_queue(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,HtBuffer *buf){
+int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,void *user_buf,int size,int number){
+    HtBuffer *buf_ptr=(fifo->fifo+insert_idx);
+    if(size>WINDOW_SIZE)return -1;
+    // fifo->fifo[insert_idx]=*buf;
+    memcpy(buf_ptr->buf,user_buf,size);
+    buf_ptr->size=size;
+    buf_ptr->number=number;
+    check[insert_idx]=check_state;
+    return size;
+}
+int enqueue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
+    if((fifo->rear+1)%WINDOW_SIZE == fifo->head)return -1;
+    fifo->fifo[fifo->rear]=*buf;
+    check[fifo->rear]=check_state;
+    fifo->rear=(fifo->rear+1)%WINDOW_SIZE;
+    return buf->size;
+}
+int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
+    HtBuffer *buf_ptr;
+    if(fifo->head== fifo->rear)return -1;//无数据
+    buf_ptr= fifo->fifo + fifo->head;
+    if(buf!=NULL)*buf=*buf_ptr;
+    check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
+    fifo->head=(fifo->head+1)%WINDOW_SIZE;
+    return buf->size;
+}
+int enqueue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size,int number){
+    HtBuffer *buf_ptr;
+    if((fifo->rear+1)%WINDOW_SIZE == fifo->head)return -1;
+    buf_ptr= fifo->fifo + fifo->rear;
+    memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
+    buf_ptr->number=number;
+    buf_ptr->size=size;
+    check[fifo->rear]=check_state;
+    fifo->rear=(fifo->rear+1)%WINDOW_SIZE;
+    return buf_ptr->size;
+}
+int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size){
+    HtBuffer *buf_ptr;
+    if(fifo->head== fifo->rear)return -1;//无数据
+    buf_ptr= fifo->fifo + fifo->head;
+    if(user_buf!=NULL)memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
+    check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
+    fifo->head=(fifo->head+1)%WINDOW_SIZE;
+    return buf_ptr->size;
+}
 
 

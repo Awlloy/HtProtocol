@@ -101,10 +101,11 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             decode_data=recover_buf.buf+2;
             decode_data_size=recover_buf.size-3;
         }
+        printf("rf_number %d\n",rf_number);
         if(is_head){
-            if((flag &(ACK|RF)) == (ACK|RF)){
+            if((flag &(ACK|RF)) == (ACK|RF) && recover_buf.number == rf_number){
                 if(closing)break;
-            }else if((flag & RF) == (RF)){
+            }else if((flag & RF) == (RF) && recover_buf.number == rf_number){
                 closing=1;
                 write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
                 time_out=context->retry_timeout_us * 2;//修改超时等待反馈
@@ -135,7 +136,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         //计算新包的number在fifo中与head的偏移量,-1为无法缓存
         window_id_offest=get_pack_to_window_offest(context,recover_buf.number);
         if(window_id_offest<0){
-            printf("无法装入窗口\n");
+            printf("无法装入窗口 head num %d   %d\n",context->read_fifo.fifo[context->read_fifo.head].number,recover_buf.number);
             continue;//无法装入窗口,
         }
         printf("head %d   window_id_offest %d recover_buf.number %d\n",context->read_fifo.fifo[context->read_fifo.head].number,window_id_offest,recover_buf.number);
@@ -171,7 +172,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         if(ret>=0)write_respond(context,recover_buf.number,ACK);//装入缓冲区成功，反馈发送者
         if((flag&LF)==LF && ret >= 0){//rear帧成功放入缓存内
             is_rear=1;
-            rf_number=recover_buf.number;//记录最后帧的序号，以便后面发送确认
+            rf_number=(recover_buf.number+1)%NUMBER_MAX_SIZE;//记录最后帧的序号，以便后面发送确认
         }
         // if(is_rear && check_read_window(context)){//所有包已经接收完成
         //     printf("all read done send out\n");

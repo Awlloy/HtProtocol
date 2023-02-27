@@ -20,7 +20,7 @@ int send_window(HtProtocolContext *context){
     int ret=0;
     int i;
     int window_id=0;
-    int size=context->read_fifo.size;
+    int size=context->write_fifo.size;
     int all_done=1;
     // int rear;
     HTimestamp timestamp;
@@ -56,8 +56,8 @@ void check_write(){
     }
 }
 int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,int size,int flag,int number_,int is_first){//将用户数据放入发送窗口
+    static int number=number_;
     HtBuffer *window_buf;
-    static int number=0;
     int new_rear;
     int window_id;
     int pack_size=0;
@@ -69,6 +69,7 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
     window_buf->number=number;
     window_buf->size=PACK_SIZE;
     pack_size=byte_stuffing(buf,size,window_buf,flag,is_first);
+    
     printf("number %d\n",number);
     *_window_id=window_id;
     ++number;
@@ -79,7 +80,7 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
 void update_ack(HtProtocolContext *context,uint8_th number){
     int i;
     int window_id=0;
-    int size=context->read_fifo.size;
+    int size=context->write_fifo.size;
     for(i=0;i<size;i++){
         window_id=i%WINDOW_SIZE;
         if(context->write_fifo.fifo[window_id].number == number){
@@ -95,11 +96,12 @@ void update_ack(HtProtocolContext *context,uint8_th number){
         }
     }
     context->write_fifo.head=window_id;
+    context->write_fifo.size-=i;
 }
 void resend_nak(HtProtocolContext *context,uint8_th number){
     int i;
     int window_id=0;
-    int size=context->read_fifo.size;
+    int size=context->write_fifo.size;
     for(i=0;i<size;i++){
         window_id=i%WINDOW_SIZE;
         if(context->write_fifo.fifo[window_id].number == number){
@@ -186,7 +188,7 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             //数据发送完成并全部收到反馈，进入接收者结束信号，并超时等待
             printf("send done\n");
             send_done=1;
-            time_out=context->retry_timeout_us;//修改超时等待反馈
+            time_out=context->retry_timeout_us*2;//修改超时等待反馈
             // rf_number=recover_buf.number;
             get_timestamp(&timestamp);
             // break;//发送完成

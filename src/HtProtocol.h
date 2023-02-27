@@ -81,16 +81,17 @@ struct WindowFifo{
 };
 struct HtProtocolContext{
     uint16_th pack_idx;
+    int64_th retry_timeout_us;
     //滑动窗口
     // uint16_th read_idx_head;
     // uint16_th read_idx_rear;
-    WindowFifo read_fifo;
     WindowFifo write_fifo;
-
-    int64_th retry_timeout_us;
-    HTimestamp write_timestamp[WINDOW_SIZE];
     uint8_th write_check[WINDOW_SIZE];
+    HTimestamp write_timestamp[WINDOW_SIZE];
+
+    WindowFifo read_fifo;
     uint8_th read_check[WINDOW_SIZE];
+    
     int cp_pack_number;
     int8_th activate;
     int (*read)(void *buf,int size,int time_out);//成功返回0

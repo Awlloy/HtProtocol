@@ -93,6 +93,7 @@ int byte_stuffing(void *buf,int size,HtBuffer *buffer,int flag,int is_first){
     // printf("byte_stuffing while done\n");
     // if(is_first>0 && write_buf_idx==size){//数据全部打包完毕
     if(write_buf_idx==size){//数据全部打包完毕
+        printf("all pack done\n");
         if(is_first>0){
             buf_ptr[1] |= LF;
         }else{
@@ -132,14 +133,28 @@ int check_read_window(HtProtocolContext *context){
 }
 
 // int replace_queue(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,HtBuffer *buf){
-int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,void *user_buf,int size,int number){
-    HtBuffer *buf_ptr=(fifo->fifo+insert_idx);
+int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_offest,void *user_buf,int size,int number){
+    HtBuffer *buf_ptr;
+    int window_idx;
+    int i=0;
+    if(insert_offest>WINDOW_SIZE-1)return -1;
+    //计算要增加fifo长度还是不需要增加
+    if(insert_offest>=fifo->size){//需要增加
+        for(i=0;i<insert_offest-fifo->size;++i){
+            window_idx=(fifo->size+i)%WINDOW_SIZE;
+            check[window_idx]=false;
+        }
+        fifo->size = insert_offest+1;
+    }
+    window_idx=(fifo->head+insert_offest)%WINDOW_SIZE;
+    buf_ptr=(fifo->fifo+window_idx);
     // if(size>WINDOW_SIZE)return -1;
     // fifo->fifo[insert_idx]=*buf;
+    
     memcpy(buf_ptr->buf,user_buf,size);
     buf_ptr->size=size;
     buf_ptr->number=number;
-    check[insert_idx]=check_state;
+    check[window_idx]=check_state;
     return size;
 }
 int enqueue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
@@ -166,20 +181,26 @@ int enqueue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,void *use
     if( WINDOW_SIZE == fifo->size)return -1;
     window_id=(fifo->head + fifo->size)%WINDOW_SIZE;
     buf_ptr= fifo->fifo + window_id;
-    memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
+    memcpy(buf_ptr->buf,user_buf,size);
     buf_ptr->number=number;
     buf_ptr->size=size;
     check[window_id]=check_state;
-    fifo->size=(fifo->size+1)%WINDOW_SIZE;
+    fifo->size=fifo->size+1;
     return buf_ptr->size;
 }
 int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size){
+    static int dequeue_size=0;
+    // printf("dequeue_to_user\n");
     HtBuffer *buf_ptr;
     if(fifo->size==0)return -1;
+    if(fifo->size>size)return -1;
     buf_ptr= fifo->fifo + fifo->head;
     if(user_buf!=NULL)memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
     fifo->head=(fifo->head+1)%WINDOW_SIZE;
+    fifo->size=fifo->size-1;
+    dequeue_size+=buf_ptr->size;
+    printf("dequeue_size %d\n",dequeue_size);
     return buf_ptr->size;
 }
 

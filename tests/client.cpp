@@ -131,7 +131,7 @@ int main(){
     // sendMessage(write_buffer,strlen((char *)write_buffer),&ht_write,1000*1000*10);//10s
     // printf("send_message\n");
 
-    uint8_t read_buffer[1024];
+    uint8_t read_buffer[1024*1000];
     ret=readMessage(read_buffer,sizeof(read_buffer)-1,&ht_write,1000*1000*10);//10s
     if(ret!=-1){
         read_buffer[ret]='\0';

@@ -189,7 +189,7 @@ int enqueue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,void *use
     return buf_ptr->size;
 }
 int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size){
-    static int dequeue_size=0;
+    // static int dequeue_size=0;
     // printf("dequeue_to_user\n");
     HtBuffer *buf_ptr;
     if(fifo->size==0)return -1;
@@ -199,8 +199,13 @@ int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
     fifo->head=(fifo->head+1)%WINDOW_SIZE;
     fifo->size=fifo->size-1;
-    dequeue_size+=buf_ptr->size;
-    printf("dequeue_size %d\n",dequeue_size);
+    // dequeue_size+=buf_ptr->size;
+    // printf("\n\n");
+    // for(int i=0;i<buf_ptr->size;++i){
+    //     printf("%x ",buf_ptr->buf[i]);
+    // }
+    // printf("\n\n");
+    // printf("dequeue_size %d\n",dequeue_size);
     return buf_ptr->size;
 }
 

@@ -42,13 +42,13 @@ int writer(void *buf,int size,int time_out){
     // memcpy(write_write.buf,buf,size);
     // write_write.size=size;
     int si=sendto(sockfd, buf, size, 0, (sockaddr*)&my_addr, sizeof(my_addr));
-    printf("send size  %d %d \n",si,size);
+    // printf("send size  %d %d \n",si,size);
     return si;
 }
 int reader(void *buf,int size,int time_out){
     // memcpy(buf,read_write.buf,read_write.size);
     int si=recvfrom(sockfd_receive,buf,size,0,(struct sockaddr *)&get_addr,&len);
-    if(si!=-1)printf("reader get size  %d \n",si);
+    // if(si!=-1)printf("reader get size  %d \n",si);
         // printf("\n");
     // for(int i=0;i<si;++i){
     //     printf("%x ",((uint8_t*)buf)[i]);
@@ -131,7 +131,7 @@ int main(){
     // sendMessage(write_buffer,strlen((char *)write_buffer),&ht_write,1000*1000*10);//10s
     // printf("send_message\n");
 
-    uint8_t read_buffer[1024];
+    uint8_t read_buffer[1024*1000+1];
     ret=readMessage(read_buffer,sizeof(read_buffer)-1,&ht_write,1000*1000*10);//10s
     if(ret!=-1){
         read_buffer[ret]='\0';

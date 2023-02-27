@@ -18,7 +18,13 @@
 //数据包内出现FLAG的话进行字节填充填充（除了头部数据其他数据皆填充），最高位必须位1
 #define PADFLAG 0xde
 #define NUMBER_MAX_SIZE 256
-
+#define HTABS(x) ((x)>0)?(x):-(x)
+enum HPFlag{
+    ACK=0x40,//应答
+    NAK=0x20,//请求
+    LF=0x10,//最后一段
+    RF=0x08,//最后一包接收者反馈
+};
 
 typedef struct WindowFifo WindowFifo;
 typedef struct HtProtocolContext HtProtocolContext;
@@ -112,7 +118,9 @@ int byte_stuffing(void *buf,int size,HtBuffer *buffer,int flag,int is_first);
 
 // int message2pack(void *buf,int size,void *context);
 void byte_stuffing_recover(HtBuffer *buffer,HtBuffer *buffer_res);
-
+int write_respond(HtProtocolContext *context,int number,int flag);
+void resend_nak(HtProtocolContext *context,uint8_th number);
+void update_ack(HtProtocolContext *context,uint8_th number);
 // HtProtocolContext *context;
 void timer_clock(int pass_time_us);//时钟更新
 int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us);

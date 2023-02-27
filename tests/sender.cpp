@@ -113,6 +113,7 @@ int main(){
     init_protocol_context(&ht_write,1000*100);//100ms
 
     std::thread thread([](){
+        //启动一个线程更新时间
         struct timeval start;
         struct timeval end;
         int64_t pass_time_us=0;

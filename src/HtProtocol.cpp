@@ -30,7 +30,7 @@ void init_window_check(uint8_th *check_window,int size){
 
 void init_window_fifo(WindowFifo *fifo){
     fifo->head=0;
-    fifo->rear=0;
+    fifo->size=0;
 }
 int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us){
     int i;
@@ -58,13 +58,13 @@ void close_protocol(HtProtocolContext *context){
 
 //在队列中取出一个空余窗口
 int get_free_window(WindowFifo *fifo){
-    int rear=fifo->rear;
-    int new_rear = (rear+1)%WINDOW_SIZE;
-    if( new_rear == fifo->head){
+    int window_id;
+    if(fifo->size == WINDOW_SIZE){
         return -1;//窗口已满
     }
-    fifo->rear=new_rear;
-    return rear;
+    window_id=(fifo->head+fifo->size)%WINDOW_SIZE;
+    fifo->size=fifo->size+1;
+    return window_id;
 }
 
 int byte_stuffing(void *buf,int size,HtBuffer *buffer,int flag,int is_first){
@@ -119,11 +119,12 @@ void byte_stuffing_recover(HtBuffer *buffer,HtBuffer *buffer_res){
     buffer_res->size=res_idx;
 }
 int check_read_window(HtProtocolContext *context){
-    int ic=context->read_fifo.head;
-    int rear=context->read_fifo.rear;
-    //修改为已确认
-    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
-        if(!context->read_check[ic]){
+    int i;
+    int window_id=0;
+    int size=context->read_fifo.size;
+    for(i=0;i<size;i++){
+        window_id=i%WINDOW_SIZE;
+        if(!context->read_check[window_id]){
             return 0;
         }
     }
@@ -133,7 +134,7 @@ int check_read_window(HtProtocolContext *context){
 // int replace_queue(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,HtBuffer *buf){
 int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_idx,void *user_buf,int size,int number){
     HtBuffer *buf_ptr=(fifo->fifo+insert_idx);
-    if(size>WINDOW_SIZE)return -1;
+    // if(size>WINDOW_SIZE)return -1;
     // fifo->fifo[insert_idx]=*buf;
     memcpy(buf_ptr->buf,user_buf,size);
     buf_ptr->size=size;
@@ -142,15 +143,17 @@ int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int
     return size;
 }
 int enqueue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
-    if((fifo->rear+1)%WINDOW_SIZE == fifo->head)return -1;
-    fifo->fifo[fifo->rear]=*buf;
-    check[fifo->rear]=check_state;
-    fifo->rear=(fifo->rear+1)%WINDOW_SIZE;
+    int window_id;
+    if( WINDOW_SIZE == fifo->size)return -1;
+    window_id=(fifo->head+fifo->size)%WINDOW_SIZE;
+    fifo->fifo[window_id]=*buf;
+    check[window_id]=check_state;
+    fifo->size=(fifo->size+1)%WINDOW_SIZE;
     return buf->size;
 }
 int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
     HtBuffer *buf_ptr;
-    if(fifo->head== fifo->rear)return -1;//无数据
+    if(fifo->size==0)return -1;
     buf_ptr= fifo->fifo + fifo->head;
     if(buf!=NULL)*buf=*buf_ptr;
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
@@ -159,18 +162,20 @@ int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
 }
 int enqueue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size,int number){
     HtBuffer *buf_ptr;
-    if((fifo->rear+1)%WINDOW_SIZE == fifo->head)return -1;
-    buf_ptr= fifo->fifo + fifo->rear;
+    int window_id;
+    if( WINDOW_SIZE == fifo->size)return -1;
+    window_id=(fifo->head + fifo->size)%WINDOW_SIZE;
+    buf_ptr= fifo->fifo + window_id;
     memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
     buf_ptr->number=number;
     buf_ptr->size=size;
-    check[fifo->rear]=check_state;
-    fifo->rear=(fifo->rear+1)%WINDOW_SIZE;
+    check[window_id]=check_state;
+    fifo->size=(fifo->size+1)%WINDOW_SIZE;
     return buf_ptr->size;
 }
 int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_buf,int size){
     HtBuffer *buf_ptr;
-    if(fifo->head== fifo->rear)return -1;//无数据
+    if(fifo->size==0)return -1;
     buf_ptr= fifo->fifo + fifo->head;
     if(user_buf!=NULL)memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用

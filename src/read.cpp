@@ -9,13 +9,15 @@ int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out){
     return ret;
 }
 int get_pack_to_window_offest(HtProtocolContext *context,int number){
-    int head=context->read_fifo.head;
-    int rear=context->read_fifo.rear;
+    // int head=context->read_fifo.head;
+    // int size=context->read_fifo.size;
     int offest;
-    int head_number=context->read_fifo.fifo[head].number;
+    // int head_number=context->read_fifo.fifo[head].number;
+    int head_number=context->read_fifo.fifo[context->read_fifo.head].number;
     offest = number - head_number;
     if(offest<0)offest+=NUMBER_MAX_SIZE;
-    if(head==rear)return 0;//
+    // if(size==WINDOW_SIZE)return 0;//已满无法存储
+    // if(size==WINDOW_SIZE)return -1;//已满无法存储
     //检查是否在可接收窗口内 //在可缓存的下标范围内,无需
     if( offest < WINDOW_SIZE ){
         return offest;
@@ -31,7 +33,8 @@ int read_pack_from_window(HtProtocolContext *context,HtBuffer *recover_buf,int b
     int window_id;
     int i;
     int head=context->read_fifo.head;
-    int rear=context->read_fifo.rear;
+    // int rear=context->read_fifo.rear;
+    int size=context->read_fifo.size;
     int offest;
     
     context->read_check[context->read_fifo.head]=false;//头帧标记为未收到
@@ -43,11 +46,11 @@ int read_pack_from_window(HtProtocolContext *context,HtBuffer *recover_buf,int b
         if(offest<0)offest+=NUMBER_MAX_SIZE;
         window_id = (context->read_fifo.head+offest)%WINDOW_SIZE;//新帧在窗口的坐标
         //判断该帧是否已经开辟过位置
-        if(HTABS(rear - head - 1) < offest){//需要开辟窗口,从对尾开始开辟
-            for(i=rear;i<=window_id;i=(i+1)%WINDOW_SIZE){
+        if(size < offest){//需要开辟窗口,从对尾开始开辟
+            for(i=(head+size)%WINDOW_SIZE;i<=window_id;i=(i+1)%WINDOW_SIZE){
                 context->read_check[i]=false;
             }
-            context->read_fifo.rear=i;//更新队尾
+            context->read_fifo.size=offest+1;//更新长度
         }
         if(!context->read_check[window_id]){//未缓存该帧
             memcpy(context->read_fifo.fifo[window_id].buf,recover_buf->buf+buf_offest,recover_buf->size+size_offest);
@@ -173,7 +176,8 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             //检查能否
             if(context->read_check[context->read_fifo.head]){//头已经收到,考虑替换
                 if(window_id_offest == WINDOW_SIZE - 1 
-                && ((context->read_fifo.rear+1)%WINDOW_SIZE == context->read_fifo.head)){//最后一个下标,当head已经接收过时,需要将head移动.即替换head,过滤最旧已经接收到的数据数据
+                // && ((context->read_fifo.rear+1)%WINDOW_SIZE == context->read_fifo.head)){//最后一个下标,当head已经接收过时,需要将head移动.即替换head,过滤最旧已经接收到的数据数据
+                && (context->read_fifo.size == WINDOW_SIZE)){//最后一个下标,当head已经接收过时,需要将head移动.即替换head,过滤最旧已经接收到的数据数据
                     //直接出队入队
                     //并且将head包拷贝到用户数据
                     ret=dequeue_to_user(&(context->read_fifo),context->read_check,false,user_buf,cp_size);
@@ -186,7 +190,9 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                     // }else{//
                     //     ret=enqueue_from_user(&(context->read_fifo),context->read_check,true,recover_buf.buf+2,recover_buf.size-3,recover_buf.number);
                     // }
-                    
+
+                }else{
+
                 }
             }
             //缓存该帧
@@ -211,7 +217,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         }
         is_head=0;//取消标记is_head
     }
-    if(is_rear && context->read_fifo.head==context->read_fifo.rear){//所有包已经接收完成
+    if(is_rear && context->read_fifo.size == WINDOW_SIZE){//所有包已经接收完成
         printf("all read done but receive rf time out\n");
         return cp_pack_idx;
     }

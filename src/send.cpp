@@ -18,30 +18,24 @@ int send_window(HtProtocolContext *context){
     // printf("send_window \n");
     //发送窗口数据
     int ret=0;
-    int ic;
+    int i;
+    int window_id=0;
+    int size=context->read_fifo.size;
     int all_done=1;
-    int rear;
+    // int rear;
     HTimestamp timestamp;
     int64_th retry_timeout_us=context->retry_timeout_us;
     HTimestamp *writes_timestamp=context->write_timestamp;
-    ic=context->write_fifo.head;
-    rear=context->write_fifo.rear;
-    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
-        if(context->write_check[ic])continue;//已经确认，无需重发
-        all_done=0;
-        if(get_passtime(writes_timestamp+ic)>=retry_timeout_us){
-            ret=send_pack(context,&(context->write_fifo.fifo[ic]),&writes_timestamp[ic]);
-            //读时间戳
-            // get_timestamp(&timestamp);
-            // //重发帧
-            // ret=context->write(context->write_fifo.fifo[ic].buf,
-            //                 context->write_fifo.fifo[ic].size,retry_timeout_us);
-            // if(ret==0)writes_timestamp[ic]=timestamp;
+    for(i=0;i<size;i++){
+        window_id=i%WINDOW_SIZE;
+        if(context->write_check[window_id])continue;//已经确认，无需重发
+        all_done=0;//存在未确认
+        if(get_passtime(writes_timestamp+window_id)>=retry_timeout_us){
+            ret=send_pack(context,&(context->write_fifo.fifo[window_id]),&writes_timestamp[window_id]);
             if(ret==-1)return -1;
         }
     }
     if(all_done){
-        // printf("window send done\n");
         return 1;
     }
     return 0;
@@ -83,33 +77,36 @@ int write_pack_to_window(HtProtocolContext *context,int *_window_id,void *buf,in
 }
 
 void update_ack(HtProtocolContext *context,uint8_th number){
-    int ic=context->write_fifo.head;
-    int rear=context->write_fifo.rear;
-    //修改为已确认
-    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
-        if(context->write_fifo.fifo[ic].number == number){
-            context->write_check[ic]=true;
+    int i;
+    int window_id=0;
+    int size=context->read_fifo.size;
+    for(i=0;i<size;i++){
+        window_id=i%WINDOW_SIZE;
+        if(context->write_fifo.fifo[window_id].number == number){
+            context->write_check[window_id]=true;
             break;
         }
     }
-    //窗口移动
-    ic=context->write_fifo.head;
-    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
-        if(!context->write_check[ic]){
+    //窗口移动至未确认的窗口
+    for(i=0;i<size;i++){
+        window_id=i%WINDOW_SIZE;
+        if(!context->write_check[window_id]){
             break;
         }
     }
-    context->write_fifo.head=ic;
+    context->write_fifo.head=window_id;
 }
 void resend_nak(HtProtocolContext *context,uint8_th number){
-    int ic=context->write_fifo.head;
-    int rear=context->write_fifo.rear;
-    for(;ic!=rear;ic=(ic+1)%WINDOW_SIZE){
-        if(context->write_fifo.fifo[ic].number == number){
-            // context->write_check[ic]=false;
-            context->write(context->write_fifo.fifo[ic].buf,context->write_fifo.fifo[ic].size,context->retry_timeout_us);
+    int i;
+    int window_id=0;
+    int size=context->read_fifo.size;
+    for(i=0;i<size;i++){
+        window_id=i%WINDOW_SIZE;
+        if(context->write_fifo.fifo[window_id].number == number){
+            context->write(context->write_fifo.fifo[window_id].buf,context->write_fifo.fifo[window_id].size,context->retry_timeout_us);
             break;
         }
+
     }
 }
 int write_respond(HtProtocolContext *context,int number,int flag){

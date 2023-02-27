@@ -77,7 +77,7 @@ struct HtBuffer{
 struct WindowFifo{
     HtBuffer fifo[WINDOW_SIZE];//接收窗口
     uint16_th head;//head为第一个数据
-    uint16_th rear;//rear不村数据
+    uint16_th size;//fifo占用长度
 };
 struct HtProtocolContext{
     uint16_th pack_idx;

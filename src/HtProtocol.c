@@ -5,7 +5,10 @@ HtProtocolContext *context_array[MAX_CONNECT]={0};//保存连接的context,以�
 int context_num=0;
 
 
-
+void set_priv_data(HtProtocolContext *context,void *priv_data,int priv_size){
+    context->priv_data=priv_data;
+    context->priv_size=priv_size;
+}
 
 
 void show_window_check(WindowFifo *fifo,unsigned char *check_window,int window_max){

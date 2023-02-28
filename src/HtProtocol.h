@@ -84,6 +84,8 @@ struct HtProtocolContext{
     char activate;
     int (*read)(void *buf,int size,int time_out);//成功返回0
     int (*write)(void *buf,int size,int time_out);//成功返回0
+    void *priv_data;
+    int priv_size;
 
 };
 void show_window_check(WindowFifo *fifo,unsigned char *check_window,int window_max);
@@ -92,6 +94,8 @@ void show_window_number(WindowFifo *fifo,int window_max);
 void timer_clock(long long pass_time_us);//时钟更新
 void close_protocol(HtProtocolContext *context);
 int init_protocol_context(HtProtocolContext *context,long long retry_timeout_us);
+
+void set_priv_data(HtProtocolContext *context,void *priv_data,int priv_size);
 int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 int readMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 

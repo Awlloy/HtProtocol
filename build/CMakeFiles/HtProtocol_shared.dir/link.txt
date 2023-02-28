@@ -1,1 +1,0 @@
-/usr/bin/cc -fPIC   -shared -Wl,-soname,libHtProtocol_shared.so -o libHtProtocol_shared.so CMakeFiles/HtProtocol_shared.dir/src/HtProtocol.c.o CMakeFiles/HtProtocol_shared.dir/src/reader.c.o CMakeFiles/HtProtocol_shared.dir/src/sender.c.o CMakeFiles/HtProtocol_shared.dir/src/val_data.c.o 

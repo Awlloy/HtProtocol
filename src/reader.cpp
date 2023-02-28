@@ -196,8 +196,16 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             if(ret!=-1){
                 // getchar();
                 last_window_number=context->read_fifo.fifo[(context->read_fifo.head+context->read_fifo.size-1)%READ_WINDOW_SIZE].number;
+                if(context->read_fifo.size<READ_WINDOW_SIZE){
+                    for(;context->read_fifo.size<READ_WINDOW_SIZE;context->read_fifo.size++){
+                        last_window_number=(last_window_number+1)%READ_WINDOW_SIZE;
+                        window_id=(context->read_fifo.head+context->read_fifo.size)%READ_WINDOW_SIZE;
+                        context->read_fifo.fifo[window_id].number=last_window_number;
+                        context->read_check[window_id]=false;
+                    }
+                }
                 for(i=0;i<=pass_window_size;i++){
-                    last_window_number=(last_window_number+1)%NUMBER_MAX_SIZE;
+                    last_window_number=(last_window_number+1)%READ_WINDOW_SIZE;
                     //给即将被替换的窗口更新新的number值
                     context->read_fifo.fifo[context->read_fifo.head].number=last_window_number;
                     //出队已经就绪的数据

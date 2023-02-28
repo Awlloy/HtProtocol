@@ -34,7 +34,8 @@ int send_window(HtProtocolContext *context){
     int64_th retry_timeout_us=context->retry_timeout_us;
     HTimestamp *writes_timestamp=context->write_timestamp;
     for(i=0;i<size;i++){
-        window_id=i%WINDOW_SIZE;
+        window_id=(context->write_fifo.head+i)%WINDOW_SIZE;
+        
         if(context->write_check[window_id])continue;//已经确认，无需重发
         all_done=0;//存在未确认
         if(get_passtime(writes_timestamp+window_id)>=retry_timeout_us){
@@ -94,7 +95,7 @@ void update_ack(HtProtocolContext *context,uint8_th number){
     int window_id=0;
     int size=context->write_fifo.size;
     for(i=0;i<size;i++){
-        window_id=i%WINDOW_SIZE;
+        window_id=(context->write_fifo.head+i)%WINDOW_SIZE;
         if(context->write_fifo.fifo[window_id].number == number){
             context->write_check[window_id]=true;
             break;
@@ -102,7 +103,7 @@ void update_ack(HtProtocolContext *context,uint8_th number){
     }
     //窗口移动至未确认的窗口
     for(i=0;i<size;i++){
-        window_id=i%WINDOW_SIZE;
+        window_id=(context->write_fifo.head+i)%WINDOW_SIZE;
         if(!context->write_check[window_id]){
             break;
         }
@@ -115,7 +116,7 @@ void resend_nak(HtProtocolContext *context,uint8_th number){
     int window_id=0;
     int size=context->write_fifo.size;
     for(i=0;i<size;i++){
-        window_id=i%WINDOW_SIZE;
+        window_id=(context->write_fifo.head+i)%WINDOW_SIZE;
         if(context->write_fifo.fifo[window_id].number == number){
             context->write(context->write_fifo.fifo[window_id].buf,context->write_fifo.fifo[window_id].size,context->retry_timeout_us);
             break;
@@ -182,13 +183,15 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     init_window_fifo(&context->write_fifo);//初始化接收fifo
     while(get_passtime(&timestamp)<time_out){
         // printf("size_send %d\n",size_send);
+        
         if(size_send>0){
             ret=write_pack_to_window(context,&window_id,buf_send,size_send,flag,last_number,first);
             // printf("write_pack_to_window %d %d ret\n",number,ret);
-            first=0;
             //发送当前帧数据
+            first=0;
             if(ret>=0){
                 last_number=(last_number+1)%NUMBER_MAX_SIZE;
+                // printf
                 //装入部分数据到窗口，跳过已经装入数据
                 buf_send+=ret;
                 size_send-=ret;

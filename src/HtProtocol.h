@@ -5,7 +5,8 @@
 #include <malloc.h>
 #include <stdio.h>
 //窗口大小，窗口越大占用空间越大
-#define WINDOW_SIZE 20
+#define WINDOW_SIZE 15
+#define READ_WINDOW_SIZE 30
 #define PACK_SIZE 20
 
 
@@ -58,7 +59,7 @@ struct HtBuffer{
  *  0  确认帧  错误帧（请求帧） 最后帧
  * */
 struct WindowFifo{
-    HtBuffer fifo[WINDOW_SIZE];//接收窗口
+    HtBuffer fifo[READ_WINDOW_SIZE];//接收窗口
     uint16_th head;//head为第一个数据
     uint16_th size;//fifo占用长度
 };
@@ -76,7 +77,7 @@ struct HtProtocolContext{
     HTimestamp write_timestamp[WINDOW_SIZE];
 
     WindowFifo read_fifo;
-    uint8_th read_check[WINDOW_SIZE];
+    uint8_th read_check[READ_WINDOW_SIZE];
     
     int cp_pack_number;
     int8_th activate;

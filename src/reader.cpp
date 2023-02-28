@@ -22,7 +22,7 @@ int get_pack_to_window_offest(HtProtocolContext *context,int number){
     offest = number - head_number;
     if(offest<0)offest+=NUMBER_MAX_SIZE;
     //检查是否在可接收窗口内 //在可缓存的下标范围内,无需
-    if( offest <= WINDOW_SIZE ){
+    if( offest <= READ_WINDOW_SIZE ){
         return offest;
     }
     return -1;
@@ -74,7 +74,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     int rf_number=-1;
     int closing=0;
     head_buf.number=-1;
-    head_buf.size=WINDOW_SIZE;
+    head_buf.size=READ_WINDOW_SIZE;
     init_window_fifo(&context->read_fifo);//初始化接收fifo
     get_timestamp(&timestamp);
     while(get_passtime(&timestamp)<time_out){
@@ -152,9 +152,9 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         if(context->read_fifo.size==0){//第一帧
             printf("first\n");
             ret=enqueue_from_user(&(context->read_fifo),context->read_check,true,decode_data,decode_data_size,recover_buf.number);
-        }else if(window_id_offest < WINDOW_SIZE){//未缓存该帧
+        }else if(window_id_offest < READ_WINDOW_SIZE){//未缓存该帧
             printf("second  %d\n",window_id_offest);
-            window_id = (context->read_fifo.head+window_id_offest)%WINDOW_SIZE;//新帧在窗口的坐标
+            window_id = (context->read_fifo.head+window_id_offest)%READ_WINDOW_SIZE;//新帧在窗口的坐标
             if(!context->read_check[window_id]){//未缓存
                 //缓存该帧
                 ret=replace_queue_from_user(&(context->read_fifo),context->read_check,true,window_id_offest,decode_data,decode_data_size,recover_buf.number);
@@ -163,10 +163,10 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                 printf("已有缓存 重复包\n");
             }
             
-        }else if(window_id_offest==WINDOW_SIZE){
+        }else if(window_id_offest==READ_WINDOW_SIZE){
             printf("thirdly\n");
             //若number超出窗口范围则返回-1
-            window_id = (context->read_fifo.head+window_id_offest)%WINDOW_SIZE;//新帧在窗口的坐标
+            window_id = (context->read_fifo.head+window_id_offest)%READ_WINDOW_SIZE;//新帧在窗口的坐标
             //检查能否
             if(context->read_check[context->read_fifo.head]){//头已经收到,考虑替换
                 ret=dequeue_to_user(&(context->read_fifo),context->read_check,false,user_buf,cp_size);
@@ -201,7 +201,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         int window_id=0;
         int size=context->read_fifo.size;
         for(i=0;i<size;i++){
-            window_id=i%WINDOW_SIZE;
+            window_id=i%READ_WINDOW_SIZE;
             ret=dequeue_to_user(&(context->read_fifo),context->read_check,false,user_buf,cp_size);
             if(ret==-1)return -1;
             user_buf+=ret;

@@ -1,8 +1,9 @@
 #ifndef CONFIG__H
 #define CONFIG__H
-extern "C"{
 
 #include "HtProtocol.h"
+#include <stdio.h>
+#include "val_data.h"
 
 // #define PACK_SIZE 128
 
@@ -48,5 +49,4 @@ int write_respond(HtProtocolContext *context,int number,int flag);
 void resend_nak(HtProtocolContext *context,uint8_th number);
 void update_ack(HtProtocolContext *context,uint8_th number);
 
-}
 #endif

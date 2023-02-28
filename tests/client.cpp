@@ -1,4 +1,6 @@
+extern "C" {
 #include "HtProtocol.h"
+}
 // #include <sys/timerfd.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -9,6 +11,7 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
+#include <string.h>
 #define PORT 1234
 #define PORT_RE 4567
 

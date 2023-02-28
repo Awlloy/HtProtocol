@@ -1,8 +1,7 @@
                                                         
 #ifndef HTPROTOCOL_H
 #define HTPROTOCOL_H
-extern "C"{
-#include "val_data.h"
+
 #include <malloc.h>
 #include <stdio.h>
 //窗口大小，窗口越大占用空间越大
@@ -17,15 +16,15 @@ typedef struct HtProtocolContext HtProtocolContext;
 typedef struct HtBuffer HtBuffer;
 typedef struct HTimestamp HTimestamp;
 
-// extern int64_th time_cout_us;
+// extern long long time_cout_us;
 // extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
 // extern int context_num;
 
 struct HtBuffer{
-    uint8_th buf[PACK_SIZE];
-    uint16_th size;
+    unsigned char buf[PACK_SIZE];
+    unsigned short size;
     // int number;
-    uint8_th number;
+    unsigned char number;
 
 };
 
@@ -62,39 +61,39 @@ struct HtBuffer{
  * */
 struct WindowFifo{
     HtBuffer fifo[READ_WINDOW_SIZE];//接收窗口
-    uint16_th head;//head为第一个数据
-    uint16_th size;//fifo占用长度
+    unsigned short head;//head为第一个数据
+    unsigned short size;//fifo占用长度
 };
 struct HTimestamp{
-    int64_th time_tamp;
+    long long time_tamp;
 };
 struct HtProtocolContext{
-    uint16_th pack_idx;
-    int64_th retry_timeout_us;
+    unsigned short pack_idx;
+    long long retry_timeout_us;
     //滑动窗口
-    // uint16_th read_idx_head;
-    // uint16_th read_idx_rear;
+    // unsigned short read_idx_head;
+    // unsigned short read_idx_rear;
     WindowFifo write_fifo;
-    uint8_th write_check[WINDOW_SIZE];
+    unsigned char write_check[WINDOW_SIZE];
     HTimestamp write_timestamp[WINDOW_SIZE];
 
     WindowFifo read_fifo;
-    uint8_th read_check[READ_WINDOW_SIZE];
+    unsigned char read_check[READ_WINDOW_SIZE];
     
     int cp_pack_number;
-    int8_th activate;
+    char activate;
     int (*read)(void *buf,int size,int time_out);//成功返回0
     int (*write)(void *buf,int size,int time_out);//成功返回0
 
 };
-void show_window_check(WindowFifo *fifo,uint8_th *check_window,int window_max);
+void show_window_check(WindowFifo *fifo,unsigned char *check_window,int window_max);
 void show_window_number(WindowFifo *fifo,int window_max);
 
-void timer_clock(int pass_time_us);//时钟更新
+void timer_clock(long long pass_time_us);//时钟更新
 void close_protocol(HtProtocolContext *context);
-int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us);
+int init_protocol_context(HtProtocolContext *context,long long retry_timeout_us);
 int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 int readMessage(void *buf,int size,HtProtocolContext *context,int time_out);
-}
+
 #endif
 

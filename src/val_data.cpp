@@ -1,4 +1,7 @@
+
+extern "C"{
 #include "val_data.h"
+}
 /*
 全加和校验
 */

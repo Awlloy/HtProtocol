@@ -1,7 +1,7 @@
+extern "C"{
 #include "HtProtocol.h"
 #include "config.h"
-
-
+}
 int64_th time_cout_us=0;//定时器调用计数单位未毫秒 ms
 HtProtocolContext *context_array[MAX_CONNECT]={0};//保存连接的context,以便遍历检查
 int context_num=0;

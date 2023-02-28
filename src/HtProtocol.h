@@ -1,6 +1,7 @@
                                                         
 #ifndef HTPROTOCOL_H
 #define HTPROTOCOL_H
+extern "C"{
 #include "val_data.h"
 #include <malloc.h>
 #include <stdio.h>
@@ -94,6 +95,6 @@ void close_protocol(HtProtocolContext *context);
 int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us);
 int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 int readMessage(void *buf,int size,HtProtocolContext *context,int time_out);
-
+}
 #endif
 

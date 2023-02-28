@@ -1,5 +1,7 @@
 #ifndef VAL_DATA_H
 #define VAL_DATA_H
+extern "C"{
+
 #include <stdio.h>
 #include <string.h>
 
@@ -24,6 +26,6 @@ uint8_th get_val_sum(uint8_th org_val,uint8_th *send_data,int size);
 异或和校验
 */
 uint8_th get_val_xor_sum(uint8_th org_val,uint8_th *send_data,int size);
-
+}
 #endif
 

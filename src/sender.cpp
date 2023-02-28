@@ -1,6 +1,8 @@
 
+extern "C"{
 #include "HtProtocol.h"
 #include "config.h"
+}
 extern int context_num;
 extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
 

@@ -68,6 +68,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
     int is_head=0;
     int is_rear=0;
     // int cp_pack_number=-1;//保存下一个装入用户缓冲区的序号
+    int got_head=0;
     int window_id_offest=-1;
     int window_id=-1;
     int rf_number=-1;
@@ -129,9 +130,16 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                 user_buf=(uint8_th *)buf;
                 cp_size=size;
                 init_window_fifo(&(context->read_fifo));
+                
                 context->read_check[context->read_fifo.head]=false;
                 is_rear=0;
+                got_head=1;
             }
+        }
+        printf("head %d   window_id_offest %d recover_buf.number %d\n",context->read_fifo.fifo[context->read_fifo.head].number,window_id_offest,recover_buf.number);
+        if(!got_head){
+            printf("loss head frame!!\n");
+            continue;
         }
         //计算新包的number在fifo中与head的偏移量,-1为无法缓存
         window_id_offest=get_pack_to_window_offest(context,recover_buf.number);
@@ -169,6 +177,8 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                 ret=enqueue_from_user(&(context->read_fifo),context->read_check,true,decode_data,decode_data_size,recover_buf.number);
             }
         }
+        printf("ret head %d   window_id_offest %d recover_buf.number %d\n",context->read_fifo.fifo[context->read_fifo.head].number,window_id_offest,recover_buf.number);
+
         if(ret>=0)write_respond(context,recover_buf.number,ACK);//装入缓冲区成功，反馈发送者
         if((flag&LF)==LF && ret >= 0){//rear帧成功放入缓存内
             is_rear=1;

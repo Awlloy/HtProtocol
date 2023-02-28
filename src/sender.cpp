@@ -259,9 +259,9 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                 }
                 continue;
                 
-            }else if((flag&RF)==RF && closing){
+            }else if((flag&RF)==RF){
                 printf("got RF close last_number %d  recover_buf.number %d\n",last_number,recover_buf.number);
-                if(last_number==recover_buf.number){
+                if(last_number==recover_buf.number && closing){
                     write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
                     // return size;
                     break;

@@ -6,6 +6,7 @@
 #include <stdio.h>
 //窗口大小，窗口越大占用空间越大
 #define WINDOW_SIZE 15
+// #define READ_WINDOW_SIZE 30
 #define READ_WINDOW_SIZE 30
 #define PACK_SIZE 20
 
@@ -85,6 +86,9 @@ struct HtProtocolContext{
     int (*write)(void *buf,int size,int time_out);//成功返回0
 
 };
+void show_window_check(WindowFifo *fifo,uint8_th *check_window,int window_max);
+void show_window_number(WindowFifo *fifo,int window_max);
+
 void timer_clock(int pass_time_us);//时钟更新
 void close_protocol(HtProtocolContext *context);
 int init_protocol_context(HtProtocolContext *context,int64_th retry_timeout_us);

@@ -9,6 +9,29 @@ int context_num=0;
 
 
 
+
+void show_window_check(WindowFifo *fifo,uint8_th *check_window,int window_max){
+
+    printf("window number\n");
+   
+    for(int i=0;i<fifo->size;++i){
+        int window_id=(fifo->head+i)%window_max;
+        printf("%4d ",check_window[window_id]);
+    }
+    printf("\n");
+}
+
+void show_window_number(WindowFifo *fifo,int window_max){
+
+    printf("window number\n");
+   
+    for(int i=0;i<fifo->size;++i){
+        int window_id=(fifo->head+i)%window_max;
+        printf("%4d ",fifo->fifo[window_id].number);
+    }
+    printf("\n");
+}
+
 void timer_clock(int pass_time_us){
     time_cout_us+=pass_time_us;
     //check write
@@ -136,13 +159,18 @@ int check_read_window(HtProtocolContext *context){
 int replace_queue_from_user(WindowFifo *fifo,uint8_th *check,int check_state,int insert_offest,void *user_buf,int size,int number){
     HtBuffer *buf_ptr;
     int window_idx;
+    int last_number;
     int i=0;
     if(insert_offest>READ_WINDOW_SIZE-1)return -1;
     //计算要增加fifo长度还是不需要增加
     if(insert_offest>=fifo->size){//需要增加
+        last_number=fifo->fifo[(fifo->head+fifo->size-1)%READ_WINDOW_SIZE].number;
         for(i=0;i<insert_offest-fifo->size;++i){
-            window_idx=(fifo->size+i)%READ_WINDOW_SIZE;
+            // window_idx=(fifo->size+i)%READ_WINDOW_SIZE;
+            window_idx=(fifo->head+fifo->size+i)%READ_WINDOW_SIZE;
+            last_number=(last_number+1)%READ_WINDOW_SIZE;
             check[window_idx]=false;
+            fifo->fifo[window_idx].number=last_number;//debug
         }
         fifo->size = insert_offest+1;
     }
@@ -172,6 +200,7 @@ int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf){
     buf_ptr= fifo->fifo + fifo->head;
     if(buf!=NULL)*buf=*buf_ptr;
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
+    // if(!check_state)fifo->fifo[fifo->head].number=-1;//debug
     fifo->head=(fifo->head+1)%READ_WINDOW_SIZE;
     return buf->size;
 }
@@ -197,6 +226,7 @@ int dequeue_to_user(WindowFifo *fifo,uint8_th *check,int check_state,void *user_
     buf_ptr= fifo->fifo + fifo->head;
     if(user_buf!=NULL)memcpy(user_buf,buf_ptr->buf,buf_ptr->size);
     check[fifo->head]=check_state;//将该窗口接收标志修改为false,以便后面的包复用
+    // if(!check_state)fifo->fifo[fifo->head].number=-1;//debug
     fifo->head=(fifo->head+1)%READ_WINDOW_SIZE;
     fifo->size=fifo->size-1;
     // dequeue_size+=buf_ptr->size;

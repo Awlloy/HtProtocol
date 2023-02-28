@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/HtProtocol.h
+malloc.h
+-
+stdio.h
+-
+
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/config.h
+HtProtocol.h
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/HtProtocol.h
+stdio.h
+-
+val_data.h
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/val_data.h
+
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/sender.c
+HtProtocol.h
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/HtProtocol.h
+config.h
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/config.h
+
+/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/src/val_data.h
+stdio.h
+-
+string.h
+-
+

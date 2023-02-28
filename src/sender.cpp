@@ -236,6 +236,7 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         // printf("ret %d\n",ret);
         if(ret==-1 || ret==0)continue;//接收出错或无结果
         // printf("writer get_val_sum \n");
+        if(read_buf.size<3)continue;//抛弃掉长度小于3的包  最小包 flag number 校验
         val_data=get_val_sum(0,read_buf.buf,read_buf.size-1);//校验
         // printf("writer val_data \n");
         if(val_data!=read_buf.buf[read_buf.size-1])continue;//校验不通过

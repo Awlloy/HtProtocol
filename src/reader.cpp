@@ -96,6 +96,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
         read_buf.size=PACK_SIZE;
         ret=read_pack(context,&read_buf,time_out);//读取一个帧
         if(ret==-1 || ret==0)continue;//接收出错或无结果
+        if(read_buf.size<3)continue;//抛弃掉长度小于3的包  最小包 flag number 校验
         val_data=get_val_sum(0,read_buf.buf,read_buf.size-1);//校验
         
         if(val_data!=read_buf.buf[read_buf.size-1])continue;//校验不通过

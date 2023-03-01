@@ -1,6 +1,6 @@
 
 #include "HtProtocol.h"
-#include "config.h"
+#include "HtProtocolConfig.h"
 extern int context_num;
 extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
 
@@ -15,7 +15,7 @@ int send_pack(HtProtocolContext *context,HtBuffer *send_buf,HTimestamp *write_ti
     //读时间戳
     get_timestamp(&timestamp);
     ret=context->write(send_buf->buf,
-                            send_buf->size,context->retry_timeout_us);
+                            send_buf->size,context->retry_timeout_us,&(context->priv));
     //写成功的话更新更新写时间戳
     if(ret>0)*write_timestamp=timestamp;
     return ret;
@@ -118,7 +118,7 @@ void resend_nak(HtProtocolContext *context,uint8_th number){
     for(i=0;i<size;i++){
         window_id=(context->write_fifo.head+i)%WINDOW_SIZE;
         if(context->write_fifo.fifo[window_id].number == number){
-            context->write(context->write_fifo.fifo[window_id].buf,context->write_fifo.fifo[window_id].size,context->retry_timeout_us);
+            context->write(context->write_fifo.fifo[window_id].buf,context->write_fifo.fifo[window_id].size,context->retry_timeout_us,&(context->priv));
             break;
         }
 
@@ -141,13 +141,13 @@ int write_respond(HtProtocolContext *context,int number,int flag){
     printf("write_respond number %d   flag %x\n",number,flag);
     return context->write(send_buf.buf,
                         send_buf.size,
-                        context->retry_timeout_us);
+                        context->retry_timeout_us,&(context->priv));
 }
 /**
  * 回退n帧协议
  * 选择重传
  * */
-int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
+int sendMessage(void *buf,int size,void *context_,int time_out){
     /**
      * while(time<time_out){
      *      write()
@@ -160,6 +160,8 @@ int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out){
      * ret -1  发送超时
      * */
     // static int number=0;
+    HtProtocolContext *context=(HtProtocolContext *)context_;
+
     int ret;
     HtBuffer read_buf;
     HtBuffer recover_buf;

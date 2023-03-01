@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/sender_drop.dir/sender_drop.cpp.o  -o sender_drop  -Wl,-rpath,/home/hasee/myProject/科协通信协议/科协通信协议二代/HtProtocol/build -lpthread ../libHtProtocol_shared.so -lpthread 

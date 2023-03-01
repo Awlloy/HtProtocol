@@ -7,23 +7,6 @@
 
 // #define PACK_SIZE 128
 
-//最大支持通信连接数量,请根据需求修改，会影响到内存占用
-#define MAX_CONNECT 32
-
-//帧头尾标志，最高位必须位1
-#define HEADFLAG 0xab
-//数据包内出现FLAG的话进行字节填充填充（除了头部数据其他数据皆填充），最高位必须位1
-#define PADFLAG 0xde
-#define NUMBER_MAX_SIZE 256
-#define HTABS(x) ((x)>0)?(x):-(x)
-enum HPFlag{
-    ACK=0x40,//应答
-    NAK=0x20,//请求
-    LF=0x10,//最后一段
-    RF=0x08,//最后一包接收者反馈
-};
-
-
 
 int dequeue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf);
 int enqueue(WindowFifo *fifo,uint8_th *check,int check_state,HtBuffer *buf);
@@ -49,4 +32,10 @@ int write_respond(HtProtocolContext *context,int number,int flag);
 void resend_nak(HtProtocolContext *context,uint8_th number);
 void update_ack(HtProtocolContext *context,uint8_th number);
 
+
+
+void show_window_check(WindowFifo *fifo,unsigned char *check_window,int window_max);
+void show_window_number(WindowFifo *fifo,int window_max);
+
+void close_protocol(HtProtocolContext *context);
 #endif

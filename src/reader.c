@@ -1,6 +1,6 @@
 
 #include "HtProtocol.h"
-#include "config.h"
+#include "HtProtocolConfig.h"
 extern int context_num;
 extern HtProtocolContext *context_array[MAX_CONNECT];//保存连接的context,以便遍历检查
 
@@ -9,7 +9,7 @@ int check_read_window(HtProtocolContext *context);
 
 
 int read_pack(HtProtocolContext *context,HtBuffer *buf,int time_out){
-    int ret=context->read(buf->buf,buf->size,time_out);
+    int ret=context->read(buf->buf,buf->size,time_out,&(context->priv));
     buf->size=ret;
     return ret;
 }
@@ -37,8 +37,8 @@ int get_pack_to_window_offest(HtProtocolContext *context,int number){
     // }
     return offest;
 }
-
-int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
+// int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
+int readMessage(void *buf,int size,void *context_,int time_out){
     /**
      * while(time<time_out){
      *      read()
@@ -63,6 +63,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
      * head已经发送确认的话，将head数据包装入用户缓冲区，则接收窗口后移，即head=（head+1）%max_window
      * 
      * */
+    HtProtocolContext *context=(HtProtocolContext *)context_;
     uint8_th *user_buf=(uint8_th*)buf;
     int cp_size=size;
     HtBuffer read_buf;//
@@ -123,7 +124,7 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
             }else if((flag & RF) == (RF) && recover_buf.number == rf_number){
                 closing=1;
                 write_respond(context,recover_buf.number,ACK|RF);//反馈收到结果，并结束发送
-                time_out=context->retry_timeout_us * 2;//修改超时等待反馈
+                time_out=context->retry_timeout_us * 3;//修改超时等待反馈
                 get_timestamp(&timestamp);
                 write_respond(context,recover_buf.number,RF);//发送关闭信号
                 continue;
@@ -199,14 +200,16 @@ int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
                 last_window_number=context->read_fifo.fifo[(context->read_fifo.head+context->read_fifo.size-1)%READ_WINDOW_SIZE].number;
                 if(context->read_fifo.size<READ_WINDOW_SIZE){
                     for(;context->read_fifo.size<READ_WINDOW_SIZE;context->read_fifo.size++){
-                        last_window_number=(last_window_number+1)%READ_WINDOW_SIZE;
+                        last_window_number=(last_window_number+1)%NUMBER_MAX_SIZE;
                         window_id=(context->read_fifo.head+context->read_fifo.size)%READ_WINDOW_SIZE;
                         context->read_fifo.fifo[window_id].number=last_window_number;
                         context->read_check[window_id]=0;
                     }
                 }
+                // for(i=0;i<=pass_window_size;i++){
                 for(i=0;i<=pass_window_size;i++){
-                    last_window_number=(last_window_number+1)%READ_WINDOW_SIZE;
+                    last_window_number=(last_window_number+1)%NUMBER_MAX_SIZE;
+                    printf("last_window_number %d\n",last_window_number);
                     //给即将被替换的窗口更新新的number值
                     context->read_fifo.fifo[context->read_fifo.head].number=last_window_number;
                     //出队已经就绪的数据

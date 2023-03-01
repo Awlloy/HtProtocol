@@ -1,11 +1,26 @@
 #include "HtProtocol.h"
-#include "config.h"
+#include "HtProtocolConfig.h"
 int64_th time_cout_us=0;//定时器调用计数单位未毫秒 ms
 HtProtocolContext *context_array[MAX_CONNECT]={0};//保存连接的context,以便遍历检查
 int context_num=0;
 
 
-
+int get_context_size(){
+    return CONTEXT_SIZE;
+}
+// void set_write_func(void *context_,HtReadwriteFunc func){
+//     HtProtocolContext *context=(HtProtocolContext *)context_;
+//     context->write=func;
+// }
+// void set_read_func(void *context_,HtReadwriteFunc func){
+//     HtProtocolContext *context=(HtProtocolContext *)context_;
+//     context->read=func;
+// }
+void set_priv_data(void *context_,void *priv_data,int priv_size){
+    HtProtocolContext *context=(HtProtocolContext *)context_;
+    context->priv.priv=priv_data;
+    context->priv.size=priv_size;
+}
 
 
 void show_window_check(WindowFifo *fifo,unsigned char *check_window,int window_max){
@@ -53,12 +68,15 @@ void init_window_fifo(WindowFifo *fifo){
     fifo->head=0;
     fifo->size=0;
 }
-int init_protocol_context(HtProtocolContext *context,long long retry_timeout_us){
+HtContext *init_protocol_context(void *context_,long long retry_timeout_us,HtReadwriteFunc write_func,HtReadwriteFunc read_func){
+// int init_protocol_context(void *context_,long long retry_timeout_us){
+    HtProtocolContext *context=(HtProtocolContext *)context_;
     int i;
     context->pack_idx=0;
     context->activate=1;
     context->retry_timeout_us=retry_timeout_us;
-    context->cp_pack_number=-1;
+    context->write=write_func;
+    context->read=read_func;
     init_window_fifo(&context->write_fifo);
     init_window_check(context->write_check,WINDOW_SIZE);
     init_window_fifo(&context->read_fifo);
@@ -67,10 +85,10 @@ int init_protocol_context(HtProtocolContext *context,long long retry_timeout_us)
         if(context_array[i]==NULL || !(context_array[i]->activate)){
             context_array[i]=context;
             ++context_num;
-            return i;//返回存储索引
+            return context_;//返回存储索引
         }
     }
-    return -1;//无法存储该context
+    return context_;//无法存储该context
 }
 void close_protocol(HtProtocolContext *context){
     context->activate=0;

@@ -33,7 +33,7 @@ static int setsocketnonblock(int sfd)
  
     return fcntl(sfd, F_SETFL, flags | O_NONBLOCK);
 }
-HtBuffer write_write;
+// HtBuffer write_write;
 int  sockfd;
 int  sockfd_receive;
 struct sockaddr_in my_addr;
@@ -42,7 +42,7 @@ struct sockaddr_in get_addr;
 socklen_t len;
 
 // HtBuffer read_write;
-int writer(void *buf,int size,int time_out){
+int writer(void *buf,int size,int time_out,PrivData *priv){
     // memcpy(write_write.buf,buf,size);
     // write_write.size=size;
     int scale=rand()%10;//a属于 [0,10)  rand（）使
@@ -59,7 +59,7 @@ int writer(void *buf,int size,int time_out){
     // printf("send size  %d %d \n",si,size);
     return si;
 }
-int reader(void *buf,int size,int time_out){
+int reader(void *buf,int size,int time_out,PrivData *priv){
     // memcpy(buf,read_write.buf,read_write.size);
     int si=recvfrom(sockfd_receive,buf,size,0,(struct sockaddr *)&get_addr,&len);
     // if(si!=-1)printf("reader get size  %d \n",si);
@@ -104,7 +104,7 @@ int main(){
 	get_addr.sin_port = htons(PORT_RE); /* short, network byte order */
 	get_addr.sin_addr.s_addr = inet_addr(IP);
     
-   
+   printf("get_context_size %d\n",get_context_size());
 
 	ret=bind(sockfd_receive, (struct sockaddr *)&get_addr, sizeof(get_addr));
     
@@ -116,13 +116,12 @@ int main(){
 
     setsocketnonblock(sockfd);
     setsocketnonblock(sockfd_receive);
-    HtProtocolContext ht_write;
-    ht_write.read=reader;
-    ht_write.write=writer;
+    HtContext ht_write;
 
 
     // init_protocol_context(&ht_write,1000);//1ms
-    init_protocol_context(&ht_write,1000*100);//100ms
+    HtContext *context_ptr=init_protocol_context(&ht_write,1000*100,writer,reader);//100ms
+    // init_protocol_context(&ht_write,1000*100,writer,reader);//100ms
     
     std::thread thread([](){
         struct timeval start;
@@ -146,7 +145,7 @@ int main(){
     // printf("send_message\n");
 
     uint8_t read_buffer[1024+1];
-    ret=readMessage(read_buffer,sizeof(read_buffer)-1,&ht_write,1000*1000*10);//10s
+    ret=readMessage(read_buffer,sizeof(read_buffer)-1,context_ptr,1000*1000*10);//10s
     if(ret!=-1){
         read_buffer[ret]='\0';
         printf("read \n%s\n",read_buffer);

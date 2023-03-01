@@ -33,7 +33,7 @@ static int setsocketnonblock(int sfd)
     return fcntl(sfd, F_SETFL, flags | O_NONBLOCK);
 }
 
-HtBuffer write_write;
+// HtBuffer write_write;
 int  sockfd;
 int  sockfd_receive;
 struct sockaddr_in my_addr;
@@ -42,7 +42,7 @@ struct sockaddr_in get_addr;
 socklen_t len;
 
 // HtBuffer read_write;
-int writer(void *buf,int size,int time_out){
+int writer(void *buf,int size,int time_out,PrivData *priv){
     // memcpy(write_write.buf,buf,size);
     // write_write.size=size;
     int scale=rand()%10;//a属于 [0,10)  rand（）使
@@ -64,7 +64,7 @@ int writer(void *buf,int size,int time_out){
     // printf("\n");
     return si;
 }
-int reader(void *buf,int size,int time_out){
+int reader(void *buf,int size,int time_out,PrivData *priv){
     // memcpy(buf,read_write.buf,read_write.size);
     int si=recvfrom(sockfd_receive,buf,size,0,(struct sockaddr *)&get_addr,&len);
     // if(si!=-1)printf("reader get size  %d \n",si);
@@ -120,10 +120,11 @@ int main(){
     setsocketnonblock(sockfd);
     setsocketnonblock(sockfd_receive);
 
-    HtProtocolContext ht_write;
-    ht_write.read=reader;
-    ht_write.write=writer;
-    init_protocol_context(&ht_write,1000*100);//100ms
+    HtContext ht_write;
+    // HtProtocolContext ht_write;
+    // ht_write.read=reader;
+    // ht_write.write=writer;
+    HtContext *context_ptr=init_protocol_context(&ht_write,1000*100,writer,reader);//100ms
 
     std::thread thread([](){
         //启动一个线程更新时间
@@ -146,7 +147,7 @@ int main(){
     uint8_t write_buffer[1024]="12345 99dksfndskjfkhl23489dsmfdskhfdhsfhskklsdfhdahflkdsahfdkjsah fxcvnmvsdf i23uyr827o3irisdbfsdfdsfsdfsdfsdf0453 12312321232131237349543759834758937598347985743985392347jksdfhdhjsdhfdshfsdhfsadasdkashdjashdsadhjasdskahdsadhad475893475379485734895379534754398347598437439875934871123 hello world";
     printf("size %d\n",strlen((char *)write_buffer));
     // int send_size = sendMessage(write_buffer,strlen((char *)write_buffer),&ht_write,1000*1000*10);//10s
-    int send_size = sendMessage(write_buffer,1024,&ht_write,1000*1000*10);//10s
+    int send_size = sendMessage(write_buffer,1024,context_ptr,1000*1000*10);//10s
     printf("send \n%s\n",write_buffer);
     printf("send_message %d\n",send_size);
     close_thread=true;

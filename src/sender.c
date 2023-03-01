@@ -147,7 +147,7 @@ int write_respond(HtProtocolContext *context,int number,int flag){
  * 回退n帧协议
  * 选择重传
  * */
-int sendMessage(void *buf,int size,void *context_,int time_out){
+int sendMessage(void *buf,int size,HtContext *context_,int time_out){
     /**
      * while(time<time_out){
      *      write()

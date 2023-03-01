@@ -38,7 +38,7 @@ int get_pack_to_window_offest(HtProtocolContext *context,int number){
     return offest;
 }
 // int readMessage(void *buf,int size,HtProtocolContext *context,int time_out){
-int readMessage(void *buf,int size,void *context_,int time_out){
+int readMessage(void *buf,int size,HtContext *context_,int time_out){
     /**
      * while(time<time_out){
      *      read()

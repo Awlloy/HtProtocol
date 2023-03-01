@@ -16,7 +16,7 @@ int get_context_size(){
 //     HtProtocolContext *context=(HtProtocolContext *)context_;
 //     context->read=func;
 // }
-void set_priv_data(void *context_,void *priv_data,int priv_size){
+void set_priv_data(HtContext *context_,void *priv_data,int priv_size){
     HtProtocolContext *context=(HtProtocolContext *)context_;
     context->priv.priv=priv_data;
     context->priv.size=priv_size;
@@ -68,7 +68,7 @@ void init_window_fifo(WindowFifo *fifo){
     fifo->head=0;
     fifo->size=0;
 }
-HtContext *init_protocol_context(void *context_,long long retry_timeout_us,HtReadwriteFunc write_func,HtReadwriteFunc read_func){
+HtContext *init_protocol_context(HtContext *context_,long long retry_timeout_us,HtReadwriteFunc write_func,HtReadwriteFunc read_func){
 // int init_protocol_context(void *context_,long long retry_timeout_us){
     HtProtocolContext *context=(HtProtocolContext *)context_;
     int i;

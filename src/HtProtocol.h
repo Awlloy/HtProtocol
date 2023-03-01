@@ -121,11 +121,11 @@ void timer_clock(long long pass_time_us);//时钟更新
 // int sendMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 // int readMessage(void *buf,int size,HtProtocolContext *context,int time_out);
 int get_context_size();
-HtContext *init_protocol_context(void *context,long long retry_timeout_us,HtReadwriteFunc write_func,HtReadwriteFunc read_func);
-void set_priv_data(void *context,void *priv_data,int priv_size);
+HtContext *init_protocol_context(HtContext *context,long long retry_timeout_us,HtReadwriteFunc write_func,HtReadwriteFunc read_func);
+void set_priv_data(HtContext *context,void *priv_data,int priv_size);
 // void set_write_func(void *context,HtReadwriteFunc func);
 // void set_read_func(void *context,HtReadwriteFunc func);
-int sendMessage(void *buf,int size,void *context,int time_out);
-int readMessage(void *buf,int size,void *context,int time_out);
+int sendMessage(void *buf,int size,HtContext *context,int time_out);
+int readMessage(void *buf,int size,HtContext *context,int time_out);
 #endif
 
